@@ -1,4 +1,4 @@
-# Trailer E2E Dotted-Lane Following
+# Trailer E2E Lane Following
 > **Real-world trailer-rover lane-following system using dual-camera BEV perception, side-mirror trailer-angle estimation, and a temporal end-to-end motor policy.**
 
 ### 1. Project Overview
