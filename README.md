@@ -49,15 +49,6 @@ The following media slots are prepared for the trailer hardware, side-mirror ang
 
 > **Demo Slot.** Replace this placeholder by adding `docs/assets/demo.gif`.
 
-Recommended media filenames:
-
-| File | Description |
-| :--- | :--- |
-| `docs/assets/trailer_rover.jpg` | Rover + trailer hardware photo |
-| `docs/assets/side_mirror_angle_view.jpg` | Side-mirror camera view used for trailer-angle estimation |
-| `docs/assets/perception_debug.png` | Detection + BEV debug screenshot |
-| `docs/assets/demo.gif` | Final live demo GIF |
-
 #### Rover + Trailer Hardware
 Add the rover and trailer photo as:
 
@@ -75,15 +66,6 @@ docs/assets/side_mirror_angle_view.jpg
 ```
 
 <img src="./docs/assets/side_mirror_angle_view.jpg" width="900" alt="Side-mirror trailer-angle estimation view">
-
-#### Perception Debug View
-Add the detection + BEV screenshot as:
-
-```text
-docs/assets/perception_debug.png
-```
-
-<img src="./docs/assets/perception_debug.png" width="900" alt="Trailer perception debug view">
 
 ---
 
