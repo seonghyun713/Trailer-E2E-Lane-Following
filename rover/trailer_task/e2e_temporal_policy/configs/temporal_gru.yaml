@@ -1,0 +1,67 @@
+seed: 20260611
+
+data:
+  log_root: logs/dotted_lane_following_run
+  metadata_glob: "*/e2e_dataset/metadata.csv"
+  history: 10
+  image_size: [192, 160]
+  scalar_features:
+    - angle_deg
+    - angle_rate_deg_s
+    - angle_confidence
+    - angle_age_s
+    - angle_ok
+    - dt_s
+  val_fraction: 0.2
+  stratify_turn_direction: true
+  val_run_globs: []
+  run_direction_overrides: {}
+  require_active: true
+  require_valid: true
+  require_sent: true
+  max_dt_s: 0.5
+  use_bev_mask: true
+  max_train_samples: 0
+  max_val_samples: 0
+
+model:
+  cnn_channels: [24, 32, 48, 64]
+  frame_feature_dim: 128
+  scalar_embed_dim: 32
+  temporal_hidden_dim: 128
+  temporal_layers: 1
+  dropout: 0.10
+  max_motor: 1.0
+
+augmentation:
+  angle_noise_std_deg: 1.5
+  angle_rate_noise_std_deg_s: 4.0
+  mask_pixel_dropout: 0.002
+  mask_rect_dropout_prob: 0.15
+  mask_rect_max_frac: 0.10
+  mask_morph_prob: 0.10
+
+loss:
+  huber_beta: 0.05
+  mode_loss_weight: 0.20
+  balanced_mode_loss: true
+  motor_mode_weights:
+    normal: 1.0
+    straight: 1.0
+    corner: 1.35
+    pivot: 2.20
+    bias: 1.60
+
+train:
+  output_dir: e2e_temporal_policy/runs/temporal_gru
+  device: auto
+  epochs: 80
+  batch_size: 16
+  num_workers: 2
+  lr: 0.0003
+  min_lr: 0.00001
+  weight_decay: 0.0001
+  grad_clip_norm: 5.0
+  log_every: 20
+  max_train_batches: 0
+  max_val_batches: 0

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="560" viewBox="0 0 1280 560" role="img" aria-labelledby="title desc">
+  <title id="title">Demo GIF Placeholder</title>
+  <desc id="desc">Placeholder for the final trailer E2E lane-following demo GIF.</desc>
+  <rect width="1280" height="560" fill="#f6f8fa"/>
+  <rect x="48" y="48" width="1184" height="464" rx="18" fill="#ffffff" stroke="#d8dee4" stroke-width="3"/>
+  <text x="640" y="246" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#1f2933">Demo GIF Coming Soon</text>
+  <text x="640" y="302" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#596a7a">Place the final task demo at docs/assets/demo.gif</text>
+  <text x="640" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#7a8a99">Trailer dotted-lane following with temporal E2E policy</text>
+</svg>

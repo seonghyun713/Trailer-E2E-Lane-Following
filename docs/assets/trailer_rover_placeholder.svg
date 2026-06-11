@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Trailer Rover Placeholder</title>
+  <desc id="desc">Placeholder for the rover and trailer hardware photo.</desc>
+  <rect width="1280" height="720" fill="#f6f8fa"/>
+  <rect x="50" y="50" width="1180" height="620" rx="18" fill="#ffffff" stroke="#d8dee4" stroke-width="3"/>
+  <text x="640" y="314" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#1f2933">Rover + Trailer Hardware</text>
+  <text x="640" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#596a7a">Add the hardware photo as docs/assets/trailer_rover.jpg</text>
+  <text x="640" y="416" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#7a8a99">Trailer, hitch, dual cameras, Jetson, and side mirrors</text>
+</svg>

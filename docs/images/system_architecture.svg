@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900" role="img" aria-labelledby="title desc">
+  <title id="title">Trailer Rover System Architecture</title>
+  <desc id="desc">Dual-camera dotted-lane follower with trailer panel detection, angle fusion, route-aware controller, E2E policy mode, safety layer, and motor output.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#22313f"/>
+    </marker>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#1b2934" flood-opacity="0.13"/>
+    </filter>
+    <style>
+      .bg { fill: #f7f8fa; }
+      .title { font: 700 34px Arial, sans-serif; fill: #16212c; }
+      .subtitle { font: 400 16px Arial, sans-serif; fill: #586979; }
+      .box { rx: 14; fill: #ffffff; stroke-width: 2; filter: url(#shadow); }
+      .sensor { fill: #e9f3ff; stroke: #7baee6; }
+      .perception { fill: #eaf7ef; stroke: #70bf89; }
+      .geometry { fill: #eef2ff; stroke: #8a96d8; }
+      .control { fill: #fff4df; stroke: #e3aa47; }
+      .actuation { fill: #ffeceb; stroke: #df7872; }
+      .observe { fill: #eef1f4; stroke: #9aa9b5; }
+      .label { font: 700 18px Arial, sans-serif; fill: #17212b; }
+      .body { font: 400 14px Arial, sans-serif; fill: #405263; }
+      .tiny { font: 400 12px Arial, sans-serif; fill: #687a8a; }
+      .tag { font: 700 12px Arial, sans-serif; fill: #ffffff; }
+      .line { fill: none; stroke: #22313f; stroke-width: 3; marker-end: url(#arrow); }
+      .dash { fill: none; stroke: #6f8394; stroke-width: 2.5; stroke-dasharray: 8 7; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1500" height="900"/>
+  <text class="title" x="56" y="66">Trailer Rover Dotted-Lane Runtime</text>
+  <text class="subtitle" x="58" y="96">Dual CSI lane perception, mirror-panel angle estimation, route-aware control, and optional temporal E2E policy.</text>
+
+  <rect class="box sensor" x="58" y="150" width="232" height="118"/>
+  <rect x="78" y="168" width="74" height="24" rx="12" fill="#3478bd"/>
+  <text class="tag" x="96" y="185">SENSOR</text>
+  <text class="label" x="78" y="218">cam1 CSI</text>
+  <text class="body" x="78" y="244">left front / mirror view</text>
+
+  <rect class="box sensor" x="58" y="342" width="232" height="118"/>
+  <rect x="78" y="360" width="74" height="24" rx="12" fill="#3478bd"/>
+  <text class="tag" x="96" y="377">SENSOR</text>
+  <text class="label" x="78" y="410">cam0 CSI</text>
+  <text class="body" x="78" y="436">right front / mirror view</text>
+
+  <rect class="box perception" x="370" y="150" width="250" height="118"/>
+  <text class="label" x="392" y="196">Crop + Edge Fix</text>
+  <text class="body" x="392" y="224">per-camera lane crop</text>
+  <text class="tiny" x="392" y="246">color correction at frame edge</text>
+
+  <rect class="box perception" x="370" y="342" width="250" height="118"/>
+  <text class="label" x="392" y="388">Mirror ROI</text>
+  <text class="body" x="392" y="416">panel search window</text>
+  <text class="tiny" x="392" y="438">expanded ROI for YOLO</text>
+
+  <rect class="box perception" x="700" y="124" width="270" height="142"/>
+  <text class="label" x="724" y="172">SegFormer Lane Model</text>
+  <text class="body" x="724" y="200">solid / dashed mask</text>
+  <text class="tiny" x="724" y="222">Torch, TorchScript, ONNX, or TRT backend</text>
+  <text class="tiny" x="724" y="244">512 x 288 model input</text>
+
+  <rect class="box perception" x="700" y="338" width="270" height="142"/>
+  <text class="label" x="724" y="386">Trailer Panel YOLO</text>
+  <text class="body" x="724" y="414">trailer_ai_panel bbox</text>
+  <text class="tiny" x="724" y="436">ROI zoom, TensorRT engine option</text>
+  <text class="tiny" x="724" y="458">per-camera confidence and clipping checks</text>
+
+  <rect class="box geometry" x="1048" y="124" width="270" height="142"/>
+  <text class="label" x="1072" y="172">Dual Homography BEV</text>
+  <text class="body" x="1072" y="200">cam0/cam1 lane masks</text>
+  <text class="tiny" x="1072" y="222">class-priority merge</text>
+  <text class="tiny" x="1072" y="244">lane estimate fusion</text>
+
+  <rect class="box geometry" x="1048" y="338" width="270" height="142"/>
+  <text class="label" x="1072" y="386">Angle Fusion</text>
+  <text class="body" x="1072" y="414">center-table calibration</text>
+  <text class="tiny" x="1072" y="436">angle, rate, confidence, age</text>
+  <text class="tiny" x="1072" y="458">mutual exclusion for panel conflicts</text>
+
+  <rect class="box control" x="396" y="612" width="282" height="130"/>
+  <text class="label" x="418" y="654">Rule Controller</text>
+  <text class="body" x="418" y="682">route-aware trailer controller</text>
+  <text class="tiny" x="418" y="704">straight, corner, pivot, bias states</text>
+
+  <rect class="box control" x="748" y="612" width="282" height="130"/>
+  <text class="label" x="770" y="654">Temporal E2E Policy</text>
+  <text class="body" x="770" y="682">shadow, assist, or drive mode</text>
+  <text class="tiny" x="770" y="704">10-frame BEV + trailer scalars</text>
+
+  <rect class="box actuation" x="1100" y="612" width="282" height="130"/>
+  <text class="label" x="1122" y="654">Safety + Wheel Output</text>
+  <text class="body" x="1122" y="682">clamp, delta limit, deadband</text>
+  <text class="tiny" x="1122" y="704">serial left/right motor command</text>
+
+  <rect class="box observe" x="58" y="610" width="250" height="132"/>
+  <text class="label" x="80" y="652">Logs + Streams</text>
+  <text class="body" x="80" y="680">CSV, E2E dataset, MJPEG/UDP</text>
+  <text class="tiny" x="80" y="704">run_config and replay artifacts</text>
+
+  <path class="line" d="M290 209 L370 209"/>
+  <path class="line" d="M290 401 L370 401"/>
+  <path class="line" d="M620 209 L700 195"/>
+  <path class="line" d="M620 401 L700 409"/>
+  <path class="line" d="M970 195 L1048 195"/>
+  <path class="line" d="M970 409 L1048 409"/>
+  <path class="line" d="M1183 266 C1183 470, 565 500, 537 612"/>
+  <path class="line" d="M1183 480 C1183 548, 925 555, 889 612"/>
+  <path class="line" d="M678 677 L748 677"/>
+  <path class="line" d="M1030 677 L1100 677"/>
+  <path class="dash" d="M183 610 C260 560, 348 570, 430 612"/>
+  <path class="dash" d="M183 610 C430 520, 770 548, 872 612"/>
+  <path class="dash" d="M1183 266 C1300 330, 1310 520, 1241 612"/>
+
+  <text class="tiny" x="320" y="197">frames</text>
+  <text class="tiny" x="642" y="184">lane crops</text>
+  <text class="tiny" x="642" y="392">panel ROI</text>
+  <text class="tiny" x="986" y="184">masks</text>
+  <text class="tiny" x="986" y="394">detections</text>
+  <text class="tiny" x="1200" y="545">angle state</text>
+  <text class="tiny" x="1048" y="664">selected wheels</text>
+</svg>

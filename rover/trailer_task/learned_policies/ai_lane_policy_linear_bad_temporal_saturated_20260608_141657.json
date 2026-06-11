@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "mode": "es_online",
+  "architecture": "linear_feedback",
+  "input_size": 11,
+  "hidden_units": 16,
+  "linear_feature_indices": [
+    0,
+    1,
+    2,
+    6,
+    7
+  ],
+  "learn_speed": false,
+  "theta": [
+    -4.0,
+    4.0,
+    -4.0,
+    1.60129239930593,
+    -4.0,
+    1.0828741705760954
+  ],
+  "best_return": -0.261683490386547,
+  "saved_at": 1780895723.6942437,
+  "trainer": {
+    "type": "temporal_linear_dynamics_es",
+    "transition_count": 526,
+    "imagined_loss": 0.261683490386547,
+    "dynamics_shape": [
+      8,
+      5
+    ]
+  }
+}

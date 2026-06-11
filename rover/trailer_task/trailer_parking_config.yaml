@@ -1,0 +1,193 @@
+project:
+  name: trailer_parking
+  description: Dual mirror based trailer angle estimation and reverse parking.
+camera:
+  capture_width: 1280
+  capture_height: 720
+  output_width: 640
+  output_height: 360
+  fps: 30
+  appsink_format: RGBA
+  timeout_ms: 90
+  parallel_open: true
+  state_timeout_s: 0.8
+  first_frame_timeout_ms: 650
+  open_delay_s: 0.0
+  argus_release_delay_s: 0.05
+  edge_color_fix:
+    enabled: true
+    width_ratio: 0.32
+    strength: 0.75
+    green_recovery: 0.7
+  cameras:
+    cam1:
+      label: left_mirror
+      sensor_id: 1
+      enabled: true
+      roi:
+        x: 0.0
+        y: 0.1492
+        w: 0.21609
+        h: 0.2963
+      trailer_angle_sign: 1.0
+    cam0:
+      label: right_mirror
+      sensor_id: 0
+      enabled: true
+      roi:
+        x: 0.77669
+        y: 0.05829
+        w: 0.22331
+        h: 0.30303
+      trailer_angle_sign: -1.0
+models:
+  panel:
+    weights: runs_yolo/trailer_panel_yolo11n/weights/best.engine
+    imgsz: 416
+    conf: 0.18
+    iou: 0.55
+    device: auto
+    infer_every: 1
+    class_name: trailer_ai_panel
+    roi_expand_enabled: true
+    roi_expand_x: 0.45
+    roi_expand_y: 0.35
+    roi_min_width_px: 360
+    roi_min_height_px: 260
+  parking_box:
+    enabled: false
+    weights: ''
+    imgsz: 416
+    conf: 0.35
+    iou: 0.55
+    device: auto
+    class_name: parking_box
+angle:
+  calibration_csv: angle_calib_run_sign_filtered_20260607_223304/angle_calibration.csv
+  linear_model_json: angle_calib_run_sign_filtered_20260607_223304/angle_model.json
+  linear_model_weight: 0.0
+  mutual_exclusion_enabled: true
+  min_detection_conf: 0.18
+  min_samples_per_anchor: 5
+  reliable_min_abs_deg: 15.0
+  reliable_max_abs_deg: 50.0
+  extrapolate_margin_norm: 0.08
+  snap_to_measurement: true
+  no_detection_policy: edge_or_zero
+  edge_missing_start_abs_deg: 45.0
+  edge_missing_output_abs_deg: 50.0
+  edge_missing_confidence: 0.35
+  center_missing_confidence: 0.25
+  max_jump_deg: 0.0
+  filter_alpha: 1.0
+  min_output_confidence: 0.18
+  hold_timeout_s: 0.0
+  stale_timeout_s: 1.2
+  near_zero_abs_deg: 13.0
+  near_zero_confidence: 0.22
+  no_detection_zero_after_s: 0.0
+  clip_margin_px: 3
+  clipped_conf_scale: 0.55
+  edge_extrapolated_conf_scale: 0.45
+  table:
+    use_center_x: true
+    use_width_hint: true
+    width_hint_weight: 0.18
+    y_sanity_weight: 0.08
+parking:
+  enabled: true
+  auto_start: false
+  mode: scripted_box_parking
+  start_side: right
+  reverse_speed: 0.34
+  reverse_speed_slow: 0.22
+  max_steer: 0.82
+  kp_angle: 0.035
+  kd_angle: 0.006
+  reverse_steer_sign: 1.0
+  break_angle_deg: 30.0
+  hold_angle_deg: 28.0
+  straighten_target_deg: 0.0
+  angle_tolerance_deg: 4.0
+  straighten_threshold_deg: 7.0
+  break_phase_timeout_s: 4.5
+  hold_phase_s: 1.4
+  chase_phase_timeout_s: 5.0
+  straighten_phase_s: 1.0
+  final_stop_s: 0.4
+  max_parking_time_s: 12.0
+  lost_angle_grace_s: 0.65
+  min_angle_confidence: 0.16
+  require_box_for_start: false
+  require_box_during_parking: false
+  box_lost_grace_s: 0.8
+straight_reverse:
+  enabled: true
+  auto_start: false
+  target_angle_deg: 0.0
+  reverse_speed: 0.24
+  min_reverse_speed: 0.17
+  max_steer: 0.8
+  kp_angle: 0.03
+  ki_angle: 0.0
+  kd_angle: 0.006
+  reverse_steer_sign: 1.0
+  max_steer_delta_per_frame: 0.1
+  angle_slowdown_start_deg: 15.0
+  angle_slowdown_full_deg: 42.0
+  max_abs_angle_deg: 45.0
+  hard_stop_abs_angle_deg: 50.0
+  min_angle_confidence: 0.16
+  lost_angle_grace_s: 1.5
+  fault_on_angle_lost: false
+  continue_when_angle_lost: true
+  lost_continue_max_abs_angle_deg: 20.0
+  lost_continue_speed: 0.12
+  blind_reverse_timeout_s: 5.0
+  allow_counter_rotation: false
+  min_inner_reverse_ratio: 0.1
+  max_run_time_s: 60.0
+  stop_when_complete: false
+  complete_abs_angle_deg: 3.0
+  complete_hold_s: 2.0
+rover:
+  drive_model: skid_steer
+  left_channel: left_side_wheels
+  right_channel: right_side_wheels
+  serial: /dev/ttyUSB0
+  baud: 115200
+  arm: false
+  max_wheel_speed: 0.6
+  speed_gain: 1.0
+  steer_mix: 1.0
+  min_abs_wheel_command: 0.1
+  invert_left: false
+  invert_right: false
+  repeat_last_command: true
+  command_rate_hz: 20.0
+safety:
+  max_abs_angle_deg: 50.0
+  hard_stop_abs_angle_deg: 50.0
+  command_timeout_s: 0.25
+  stop_on_angle_stale: true
+  stop_on_camera_failure: true
+  stop_on_model_failure: true
+runtime:
+  display: false
+  display_scale: 1.0
+  print_every: 10
+  log_dir: logs/trailer_parking_run
+  save_video: false
+  snapshot_dir: logs/trailer_parking_snapshots
+stream:
+  enabled: false
+  host: 192.168.0.70
+  port: 5000
+  width: 960
+  height: 270
+  fps: 15
+  codec: h264
+  bitrate_kbps: 1800
+  container: raw_h264
+  encoder: x264
+  overlay: true

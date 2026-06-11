@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Local/editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Runtime outputs
+rover/trailer_task/logs/
+logs/
+*.mp4
+*.avi
+*.mov
+
+# Datasets and generated captures
+rover/trailer_task/bbox_dataset*/
+rover/trailer_task/debug_yolo_label_check/
+rover/trailer_task/dual_bev_calib_capture/
+rover/trailer_task/not_using/
+dataset/
+datasets/
+captures/
+
+# Training/export outputs
+rover/trailer_task/runs_yolo/**
+!rover/trailer_task/runs_yolo/
+!rover/trailer_task/runs_yolo/README.md
+
+rover/trailer_task/optimized_models/**
+!rover/trailer_task/optimized_models/
+!rover/trailer_task/optimized_models/README.md
+
+rover/trailer_task/e2e_temporal_policy/runs/**
+!rover/trailer_task/e2e_temporal_policy/runs/
+!rover/trailer_task/e2e_temporal_policy/runs/README.md
+
+# Model binaries
+*.pt
+*.pth
+*.safetensors
+*.engine
+*.onnx
+*.ts
+*.plan
+
+# Keep lightweight metadata/configs
+!track_riding/model_car_jetson/weights/
+!track_riding/model_car_jetson/weights/README.md
+!track_riding/model_car_jetson/weights/**/
+!track_riding/model_car_jetson/weights/**/config.json

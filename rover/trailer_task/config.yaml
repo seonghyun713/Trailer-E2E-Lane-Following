@@ -1,0 +1,101 @@
+marker:
+  # This is resolved relative to this config file.
+  image_path: ../trailer_maker.png
+  variants:
+    - normal
+    - mirror_x
+  max_template_width_px: 900
+  physical_width_m: 0.22
+
+apriltag:
+  dictionary: DICT_APRILTAG_36h11
+  # Must match the printed black-square tag size. Override with
+  # live_tag36h11_pose.py --tag-size-mm ... when using a different print.
+  tag_size_m: 0.03
+  axis_length_m: 0.0225
+
+detection:
+  feature_detector: sift
+  sift_features: 1800
+  orb_features: 2500
+  orb_fast_threshold: 7
+  match_ratio: 0.76
+  min_good_matches: 18
+  min_inliers: 12
+  ransac_reproj_threshold_px: 4.0
+  min_area_ratio: 0.002
+  max_area_ratio: 0.85
+  min_aspect: 1.25
+  max_aspect: 5.20
+  clahe: true
+  # Keep this false for driving. Rectangle-only fallback can confuse tires,
+  # lights, shelves, or mirror edges with the marker.
+  contour_fallback: false
+  feature_cluster_fallback: true
+  feature_cluster:
+    match_ratio: 0.90
+    min_points: 12
+    min_affine_inliers: 6
+    min_score: 0.72
+    min_width_ratio: 0.18
+    min_span_ratio: 0.18
+    max_y_ratio: 0.52
+    point_radius_px: 13
+    connect_kernel: [19, 9]
+    local_patch_radius_px: 18
+    min_local_bright_ratio: 0.10
+    min_local_std: 18.0
+    bright_threshold: 92
+    dark_threshold: 75
+    expand_x: 1.22
+    expand_y: 1.55
+
+camera_model:
+  # Approximate pinhole intrinsics. Calibration CSV is more important than these.
+  fx_ratio_of_width: 0.92
+  fy_ratio_of_width: 0.92
+
+cameras:
+  cam1:
+    label: left_mirror
+    enabled: true
+    # Fixed side-mirror ROI.
+    roi: {x: 0.00000, y: 0.00000, w: 0.25781, h: 0.99722}
+    mirror_sign: -1.0
+    fallback_weights:
+      bearing_deg: 0.90
+      roll_deg: 0.25
+      skew_deg: 0.18
+      pnp_yaw_deg: 0.45
+  cam0:
+    label: right_mirror
+    enabled: true
+    roi: {x: 0.71719, y: 0.00000, w: 0.28281, h: 0.99722}
+    mirror_sign: 1.0
+    fallback_weights:
+      bearing_deg: 0.90
+      roll_deg: -0.25
+      skew_deg: -0.18
+      pnp_yaw_deg: -0.45
+
+calibration:
+  # Collect samples with estimate_image.py --angle-deg ... --append-calibration.
+  samples_csv: calibration_samples.csv
+  ridge_lambda: 0.08
+  min_samples_per_camera: 5
+  clip_angle_deg: 70.0
+  features:
+    - center_x
+    - center_y
+    - log_area
+    - roll_deg
+    - skew_deg
+    - width_ratio
+    - height_ratio
+    - bearing_deg
+    - pnp_yaw_deg
+
+filter:
+  alpha: 0.35
+  min_confidence: 0.18
+  max_jump_deg: 28.0

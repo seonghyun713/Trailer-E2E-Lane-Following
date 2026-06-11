@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "mode": "es_online",
+  "architecture": "linear_feedback",
+  "input_size": 11,
+  "hidden_units": 16,
+  "linear_feature_indices": [
+    0,
+    1,
+    2,
+    6,
+    7
+  ],
+  "learn_speed": false,
+  "theta": [
+    4.0,
+    -3.805473629748069,
+    4.0,
+    2.799141221645828,
+    -3.0068995008951322,
+    -0.6926845410304033
+  ],
+  "best_return": -0.04317495034794919,
+  "saved_at": 1780895273.3824244
+}

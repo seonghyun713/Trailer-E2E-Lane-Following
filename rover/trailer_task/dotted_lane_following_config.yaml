@@ -1,0 +1,390 @@
+project:           #프로젝트 메타 정보
+  name: dotted_lane_following                                                     #실행/로그에서 사용할 프로젝트 이름
+  description: SegFormer dotted-centerline lane following for the trailer rover.  #설정 파일 설명
+camera:            #카메라 입력 설정
+  source: csi                  #입력 소스; CSI 카메라 사용
+  capture_width: 1280          #센서 캡처 원본 가로 해상도(px)
+  capture_height: 720          #센서 캡처 원본 세로 해상도(px)
+  output_width: 640            #처리용 출력 프레임 가로 해상도(px)
+  output_height: 360           #처리용 출력 프레임 세로 해상도(px)
+  fps: 6                      #카메라 목표 프레임레이트
+  appsink_format: RGBA         #GStreamer appsink 픽셀 포맷
+  timeout_ms: 90               #프레임 read 대기 시간(ms)
+  parallel_open: true          #두 카메라를 병렬로 열지 여부
+  parallel_read: true          #두 카메라 프레임을 병렬 read해서 루프 대기 시간을 줄임
+  state_timeout_s: 0.8         #GStreamer 상태 전환 대기 시간(s)
+  first_frame_timeout_ms: 650  #카메라 오픈 후 첫 프레임 대기 시간(ms)
+  open_delay_s: 0.0            #카메라 순차 오픈 시 카메라 사이 지연(s)
+  argus_release_delay_s: 0.05  #CSI 카메라 해제 후 Argus 안정화 대기(s)
+  cameras:                     #카메라별 설정
+    cam1:  #왼쪽 전방/미러 카메라
+      label: left_front_lane       #사람이 읽기 쉬운 카메라 이름
+      sensor_id: 1                 #Jetson CSI 센서 ID
+      enabled: true                #이 카메라 사용 여부
+      crop:                        #차선 세그멘테이션에 사용할 crop 영역(정규화 좌표)
+        x: 0.26  #crop 시작 x 비율
+        y: 0.0   #crop 시작 y 비율
+        w: 0.74  #crop 너비 비율
+        h: 1.0   #crop 높이 비율
+      roi:                         #트레일러 패널 YOLO/각도 추정용 ROI(정규화 좌표)
+        x: 0.0      #ROI 시작 x 비율
+        y: 0.1492   #ROI 시작 y 비율
+        w: 0.21609  #ROI 너비 비율
+        h: 0.2963   #ROI 높이 비율
+      trailer_angle_sign: 1.0      #이 카메라 각도 부호 보정값
+      vehicle_center_x_bias: 0.08  #이 카메라 단독 BEV에서 차량 중심 x 보정
+    cam0:  #오른쪽 전방/미러 카메라
+      label: right_front_lane       #사람이 읽기 쉬운 카메라 이름
+      sensor_id: 0                  #Jetson CSI 센서 ID
+      enabled: true                 #이 카메라 사용 여부
+      crop:                         #차선 세그멘테이션에 사용할 crop 영역(정규화 좌표)
+        x: 0.0   #crop 시작 x 비율
+        y: 0.0   #crop 시작 y 비율
+        w: 0.72  #crop 너비 비율
+        h: 1.0   #crop 높이 비율
+      roi:                          #트레일러 패널 YOLO/각도 추정용 ROI(정규화 좌표)
+        x: 0.77669  #ROI 시작 x 비율
+        y: 0.05829  #ROI 시작 y 비율
+        w: 0.22331  #ROI 너비 비율
+        h: 0.30303  #ROI 높이 비율
+      trailer_angle_sign: -1.0      #이 카메라 각도 부호 보정값
+      vehicle_center_x_bias: -0.08  #이 카메라 단독 BEV에서 차량 중심 x 보정
+  edge_color_fix:              #카메라 가장자리 색 틀어짐 보정
+    enabled: true        #색 보정 사용 여부
+    width_ratio: 0.32    #좌우 가장자리 보정 영역 폭 비율
+    strength: 0.75       #색 보정 강도
+    green_recovery: 0.7  #녹색 채널 복원 강도
+preprocess:        #공통 전처리 설정
+  crop:  #카메라별 crop이 없을 때 사용할 기본 crop
+    x: 0.0  #기본 crop 시작 x 비율
+    y: 0.0  #기본 crop 시작 y 비율
+    w: 1.0  #기본 crop 너비 비율
+    h: 1.0  #기본 crop 높이 비율
+models:            #모델 경로 및 추론 설정
+  segmentation:  #차선 세그멘테이션 모델 설정
+    weights: ../../track_riding/model_car_jetson/weights/segmentation/segformer_b0_yellow_line_best_model  #PyTorch 원본 SegFormer 가중치 경로
+    device: auto                                                                                           #추론 장치; auto는 CUDA 가능 시 GPU
+    half: true                                                                                             #CUDA 사용 시 FP16 추론 사용 여부
+    backend: trt                                                                                           #ONNX Runtime TensorRT EP 우선 사용
+    onnx: optimized_models/segformer_b0_yellow_line_512x288.onnx                                           #최적화된 ONNX 모델 경로
+    onnx_trt_cache: optimized_models/ort_trt_cache                                                         #ONNX Runtime TensorRT 엔진 캐시 경로
+    torchscript: optimized_models/segformer_b0_yellow_line_512x288_fp16.ts                                 #TorchScript FP16 모델 경로
+    model_width: 512                                                                                       #세그멘테이션 모델 입력 가로 크기(px)
+    model_height: 288                                                                                      #세그멘테이션 모델 입력 세로 크기(px)
+    fast_postprocess: true                                                                                 #logits를 작은 해상도에서 argmax 후 mask만 resize
+  panel:         #트레일러 AI 패널 YOLO 모델 설정
+    enabled: true                                                 #패널 검출 및 각도 추정 사용 여부
+    weights: runs_yolo/trailer_panel_yolo11n/weights/best.engine  #YOLO TensorRT engine 경로
+    imgsz: 416                                                    #YOLO 입력 이미지 크기
+    conf: 0.18                                                    #YOLO 최소 confidence threshold
+    iou: 0.55                                                     #YOLO NMS IoU threshold
+    device: auto                                                  #YOLO 추론 장치 설정
+    infer_every: 1                                                #몇 프레임마다 YOLO를 실행할지
+    class_name: trailer_ai_panel                                  #검출할 YOLO 클래스 이름
+    roi_expand_enabled: true                                      #미러 ROI 주변을 확장해서 검출할지 여부
+    roi_expand_x: 0.45                                            #ROI 가로 확장 비율
+    roi_expand_y: 0.35                                            #ROI 세로 확장 비율
+    roi_min_width_px: 360                                         #확장 ROI 최소 가로 크기(px)
+    roi_min_height_px: 260                                        #확장 ROI 최소 세로 크기(px)
+angle:             #트레일러 각도 추정/필터 설정
+  calibration_csv: angle_calib_run_sign_filtered_20260607_223304/angle_calibration.csv  #각도 anchor 캘리브레이션 CSV
+  linear_model_json: angle_calib_run_sign_filtered_20260607_223304/angle_model.json     #보조 선형 모델 JSON
+  linear_model_weight: 0.0                                                              #선형 모델 보간 반영 비율(0이면 미사용)
+  mutual_exclusion_enabled: true                                                        #양쪽 카메라 검출이 충돌할 때 하나만 선택
+  min_detection_conf: 0.18                                                              #각도 anchor로 쓸 최소 패널 검출 confidence
+  min_samples_per_anchor: 5                                                             #각 각도 anchor당 최소 샘플 수
+  reliable_min_abs_deg: 0.0                                                            #신뢰 가능한 최소 절대각(deg); 이보다 작으면 confidence 감소
+  reliable_max_abs_deg: 80.0                                                            #신뢰 가능한 최대 절대각(deg); 초과 시 confidence 감소
+  extrapolate_margin_norm: 0.08                                                         #anchor 범위 밖 extrapolation 허용 margin
+  snap_to_measurement: true                                                             #필터링 없이 새 측정값으로 즉시 갱신
+  no_detection_policy: edge_or_zero                                                     #패널 미검출 시 edge/zero 처리 정책
+  edge_missing_start_abs_deg: 45.0                                                      #마지막 각도가 이 이상이면 edge missing으로 판단(deg)
+  edge_missing_output_abs_deg: 50.0                                                     #edge missing일 때 출력할 절대각(deg)
+  edge_missing_confidence: 0.35                                                         #edge missing 출력 confidence
+  center_missing_confidence: 0.25                                                       #중앙부 미검출 zero 출력 confidence
+  max_jump_deg: 0.0                                                                     #프레임 간 최대 각도 변화 제한; 0이면 제한 없음
+  filter_alpha: 1.0                                                                     #각도 필터 alpha; 1이면 측정값 즉시 반영
+  min_output_confidence: 0.18                                                           #fused angle로 사용할 최소 confidence
+  hold_timeout_s: 0.0                                                                   #미검출 시 마지막 각도 유지 시간(s)
+  stale_timeout_s: 1.2                                                                  #각도 stale 판단 시간(s)
+  near_zero_abs_deg: 13.0                                                               #near-zero deadband 절대각(deg)
+  near_zero_confidence: 0.22                                                            #near-zero 출력 confidence
+  no_detection_zero_after_s: 0.0                                                        #미검출 후 zero로 보내는 시간(s)
+  clip_margin_px: 3                                                                     #bbox가 ROI 경계에 붙었는지 판단하는 margin(px)
+  clipped_conf_scale: 0.55                                                              #bbox clipped 시 confidence 배율
+  edge_extrapolated_conf_scale: 0.45                                                    #anchor 범위 밖 extrapolation confidence 배율
+  table:                                                                                #center table 기반 각도 보정 설정
+    use_center_x: true       #bbox center_x를 주 angle feature로 사용
+    use_width_hint: true     #bbox width를 보조 angle hint로 사용
+    width_hint_weight: 0.18  #width hint 반영 비율
+    y_sanity_weight: 0.08    #bbox center_y sanity penalty 비율
+bev:               #Bird's-Eye View 변환 설정
+  mode: dual_homography  #양쪽 카메라 homography 기반 BEV 모드
+  output_width: 640      #BEV 출력 가로 크기(px)
+  output_height: 720     #BEV 출력 세로 크기(px)
+  src_points_ratio:      #단일 카메라 fallback용 원근변환 원본점 비율
+  - - 0.08               #bottom-left x 비율
+    - 0.95  #bottom-left y 비율
+  - - 0.92               #bottom-right x 비율
+    - 0.95  #bottom-right y 비율
+  - - 0.64               #top-right x 비율
+    - 0.43  #top-right y 비율
+  - - 0.36               #top-left x 비율
+    - 0.43  #top-left y 비율
+  dual:                  #dual BEV calibration 설정
+    enabled: true                                #dual BEV 사용 여부
+    calibration_file: dual_bev_calibration.yaml  #dual BEV 보정 파일 경로
+    point_order:                                 #calibration point 순서
+    - TL                                         #좌상단
+    - TR                                         #우상단
+    - BR                                         #우하단
+    - BL                                         #좌하단
+    dst_points_ratio:                            #BEV 목적지 사각형 좌표 비율
+    - - 0.1                                      #TL x 비율
+      - 0.08  #TL y 비율
+    - - 0.9                                      #TR x 비율
+      - 0.08  #TR y 비율
+    - - 0.9                                      #BR x 비율
+      - 0.95  #BR y 비율
+    - - 0.1                                      #BL x 비율
+      - 0.95  #BL y 비율
+    vehicle_center_x_bias: 0.0                   #fused BEV 차량 중심 x 보정
+    drive_mode: estimate_fusion                  #카메라별 lane estimate를 융합해 주행
+    merge_mode: class_priority_max               #BEV mask 병합 방식; class 값 우선 max
+lane:              #차선 추정 및 기본 주행 제어 설정
+  fusion_mode: confidence_weighted_average  #카메라별 차선 명령 confidence 가중 평균
+  control_mode: lateral_heading             #lateral error + heading error 기반 제어
+  nominal_lane_width_px: 220.0              #기준 반차선/차선 폭(px)
+  min_lane_width_px: 80.0                   #유효 차선 폭 최소값(px)
+  max_lane_width_px: 420.0                  #유효 차선 폭 최대값(px)
+  row_samples: 15                           #BEV에서 샘플링할 가로 row 개수
+  row_y_min_ratio: 0.42                     #가장 먼 row y 비율
+  row_y_max_ratio: 0.97                     #가장 가까운 row y 비율
+  row_band_px: 18                           #각 row 주변에서 합산할 세로 band 반폭(px)
+  min_component_pixels: 8                   #차선 component로 인정할 최소 픽셀 수
+  solid_fallback_enabled: true              #점선이 안 보일 때 임시로 실선 기반 center 추종
+  solid_fallback_min_rows: 4                #solid fallback 허용 최소 solid row 수
+  solid_fallback_min_pair_rows: 2           #좌우 실선 pair midpoint row 최소 개수
+  solid_fallback_min_confidence: 0.16       #solid fallback 허용 최소 lane confidence
+  solid_fallback_confidence_scale: 0.78     #solid fallback confidence 감쇠 비율
+  solid_fallback_speed: 0.12                #route controller 미사용 시 solid fallback 기본 속도
+  lookahead_y_ratio: 0.65                    #기본 lookahead y 비율; 작을수록 더 먼 곳
+  pure_pursuit_gain: 0.53                   #pure pursuit 모드 조향 gain
+  lateral_gain: 0.55                         #lateral error feedback gain
+  heading_gain: 0.38                        #heading error feedback gain
+  steer_smoothing: 0.5                      #조향 출력 smoothing 비율
+  center_smoothing: 0.6                     #차선 center smoothing 비율
+  vehicle_center_x_bias: 0.0                #전체 BEV 차량 중심 x 보정
+  min_confidence: 0.25                      #lane estimate 정상 판단 최소 confidence
+  min_drive_confidence: 0.08                #주행 명령으로 사용할 최소 lane confidence
+  base_speed: 0.17                          #기본 전진 속도 명령
+  min_speed: 0.1                            #lane valid일 때 최소 전진 속도
+  max_speed: 0.25                           #lane controller 최대 전진 속도
+lane_pivot_assist:  #점선 추종 중 조향량에 따라 역방향 회전을 부드럽게 섞는 보조 믹서
+  enabled: true                         #lane follow 중 counter-rotation assist 사용 여부
+  mode: blended                         #blended=상시 부드러운 혼합, pulse=큰 오차 때 짧은 pulse
+  start_abs_steer: 0.10                 #이 조향부터 역방향 assist를 아주 조금 섞기 시작
+  full_abs_steer: 0.90                  #이 조향 이상이면 assist가 최대 비율로 들어감
+  min_confidence: 0.40                  #이 lane confidence 이상에서만 assist 허용
+  blend_smoothing: 0.35                 #assist 비율 smoothing; 클수록 부드럽고 느림
+  outer_pwm: 0.20                       #assist 최대일 때 바깥쪽/전진 바퀴 목표 명령
+  inner_reverse_pwm: 0.00               #0이면 직선 정렬 assist에서 안쪽 바퀴를 후진시키지 않음
+  min_blend_to_send: 0.01               #이 비율보다 작으면 일반 휠 믹서 사용
+  direction_sign: 1.0                   #반대로 돌면 -1.0으로 변경
+  allow_in_corner: false                #코너 구간에서는 assist 비활성화
+  post_corner_disable_s: 1.2            #코너 상태가 끝난 뒤 이 시간 동안 assist 비활성화
+  allow_in_straight: false              #STRAIGHT에서는 점선 추종을 우선하고 assist 비활성화
+  enter_abs_steer: 0.32                 #mode=pulse일 때 pulse 진입 조향 threshold
+  pulse_duration_s: 0.12                #mode=pulse일 때 pulse 지속 시간
+  cooldown_s: 0.25                      #mode=pulse일 때 pulse 후 재진입 대기 시간
+corner_pivot:     #점선 lost + 실선 코너 방향 확실할 때 제자리 회전으로 점선 재획득
+  enabled: true                         #corner pivot 상태 사용 여부
+  pivot_pwm: 0.87                       #제자리 회전 좌/우 바퀴 절대 명령; 좌회전 L=-값/R=+값
+  direction_sign: -1.0                  #-1이면 pivot 좌/우 방향 반전; 반대로 돌면 이 값만 바꾸기
+  dashed_enter_max_rows: 1              #이 이하로 점선 row가 줄면 pivot 후보
+  dashed_exit_min_rows: 4               #전체 점선 row가 이 이상이면 pivot 탈출 후보
+  near_exit_min_dashed_rows: 2          #가까운 영역 점선 row가 이 이상이면 pivot 탈출 후보
+  near_y_min_ratio: 0.70                #BEV y 이 비율보다 아래쪽을 눈앞/near 영역으로 판단
+  solid_enter_min_rows: 3               #pivot 진입에 필요한 실선 기반 row 수
+  solid_enter_min_pair_rows: 0          #0이면 한쪽 실선 recovery row만으로도 pivot 후보 허용
+  corner_enter_confidence: 0.60         #실선 row 곡률 기반 코너 확신도 진입 threshold
+  enter_confirm_frames: 2               #진입 조건 연속 확인 프레임 수
+  exit_confirm_frames: 1                #점선 재획득 연속 확인 프레임 수
+  min_lane_confidence: 0.12             #pivot 판단에 사용할 최소 lane confidence
+  angle_stop_enabled: false             #false면 trailer angle 때문에 pivot을 강제 정지하지 않음
+  max_abs_trailer_angle_deg: 999.0      #angle_stop 비활성화 중: 새 pivot 진입 각도 제한 사실상 해제
+  stop_abs_trailer_angle_deg: 999.0     #angle_stop 비활성화 중: pivot 중 각도 정지 사실상 해제
+  max_duration_s: 4.0                   #pivot 최대 지속 시간; 초과 시 정지
+route_controller:  #트레일러 각도 인식 gain-scheduled route controller
+  enabled: true                         #route-aware trailer controller 사용 여부
+  simple_dashed_priority_enabled: true   #직선+점선 충분 시 복잡 제어 대신 기본 dashed follower 우선
+  simple_dashed_min_confidence: 0.62     #simple dashed 우선 적용 최소 lane confidence
+  simple_dashed_min_rows: 8              #simple dashed 우선 적용 최소 row 수
+  simple_dashed_max_corner_confidence: 0.18  #이 이상이면 코너/회복 제어 유지
+  simple_dashed_max_abs_angle_deg: 45.0  #트레일러 각도가 이보다 크면 angle-aware 제어 유지
+  simple_dashed_speed_scale: 1.0         #simple dashed 명령 속도 배율
+  simple_dashed_max_steer: 1.0           #simple dashed 명령 최대 조향
+  straight_deadband_abs_angle_deg: 5.0  #직진 deadband trailer 절대각(deg)
+  straight_caution_abs_angle_deg: 15.0  #trailer 보정 caution 시작 절대각(deg)
+  corner_allow_abs_angle_deg: 40.0      #코너에서 허용할 trailer 절대각(deg)
+  recovery_start_abs_angle_deg: 999.0   #recovery 임시 비활성화
+  recovery_exit_abs_angle_deg: 998.0    #recovery 임시 비활성화
+  hard_stop_enabled: false              #false면 trailer angle hard stop 비활성화
+  hard_stop_abs_angle_deg: 52.0         #즉시 정지할 trailer 절대각(deg)
+  straight_far_lookahead_y_ratio: 0.70  #고정 lookahead: lane.lookahead_y_ratio와 동일하게 유지
+  corner_lookahead_y_ratio: 0.90        #고정 lookahead: 코너에서도 동일하게 유지
+  recovery_lookahead_y_ratio: 0.90      #고정 lookahead: recovery에서도 동일하게 유지
+  post_corner_settle_enabled: false     #이전 방식: 코너 탈출 후 trailer angle damping; 현재는 비활성화
+  post_corner_settle_min_s: 1.0         #코너 탈출 후 최소 settle 유지 시간(s)
+  post_corner_settle_max_s: 3.0         #trailer 각도가 남아도 이 시간 후에는 일반 직진으로 복귀
+  post_corner_settle_exit_abs_angle_deg: 12.0  #이 각도 이하이고 min_s가 지나면 settle 종료
+  post_corner_lookahead_y_ratio: 0.60   #코너 탈출 직후 더 먼 지점을 봄; 작을수록 먼 곳
+  post_corner_lane_scale: 0.55          #settle 중 차선 중앙 추종 강도
+  post_corner_trailer_scale: 0.55       #settle 중 trailer angle 보정 강도
+  post_corner_alpha_gain: 0.006         #settle 중 trailer angle error gain
+  post_corner_curve_scale: 0.15         #settle 중 curvature feedforward scale
+  post_corner_speed_scale: 0.85         #settle 중 전진 속도 배율
+  post_corner_max_steer: 0.55           #settle 중 최대 조향 제한; 과한 제자리성 회전 방지
+  post_corner_bias_enabled: true        #새 방식: 점선-바깥 실선 사이를 타다가 점선으로 부드럽게 복귀
+  post_corner_bias_trigger_on_pivot_exit: true  #corner pivot에서 점선을 재획득하면 즉시 bias 상태 시작
+  post_corner_bias_min_s: 0.8           #bias 주행 최소 유지 시간(s)
+  post_corner_bias_max_s: 2.4           #이 시간이 지나면 일반 점선 추종으로 복귀
+  post_corner_bias_ramp_s: 2.0          #bias가 0으로 줄어드는 시간(s)
+  post_corner_bias_start_fraction: 0.5 #0.5면 점선과 실선의 중앙, 0이면 점선
+  post_corner_bias_max_norm: 0.36       #e_y_norm 기준 bias 절대값 제한
+  post_corner_bias_fallback_solid_offset_norm: 0.60  #실선 위치가 없을 때 점선-실선 거리 추정값
+  post_corner_bias_direction_sign: 1.0  #+1: turn_sign +는 오른쪽 실선 쪽, 반대면 -1
+  post_corner_bias_lookahead_y_ratio: 0.90  #bias 중 lookahead; 기존 직선 추종과 비슷하게 둠
+  post_corner_bias_lane_scale: 0.85     #bias 중 차선 추종 강도
+  post_corner_bias_trailer_scale: 0.10  #bias 중 trailer angle 보정은 약하게만 사용
+  post_corner_bias_alpha_gain: 0.003    #bias 중 trailer angle gain
+  post_corner_bias_curve_scale: 0.10    #bias 중 curvature feedforward 약화
+  post_corner_bias_speed_scale: 0.95    #bias 중 전진 속도 배율
+  post_corner_bias_max_steer: 0.75      #bias 중 최대 조향 제한
+  post_corner_bias_ignore_corner_confidence: true  #bias 복귀 중 기울어진 옆선을 새 코너로 인식하지 않음
+  post_corner_bias_corner_blind_after_s: 4.5     #bias 종료 직후 코너 재인식 지연 시간(s)
+  post_corner_bias_disable_corner_pivot: true      #bias 복귀 중 corner pivot 진입 금지
+  lookahead_smoothing: 0.0              #0이면 lookahead 변경 smoothing 없음; 위 값들이 같아서 항상 0.90
+  lateral_gain: 0.55                     #route controller lateral feedback gain
+  heading_gain: 0.40                    #route controller heading feedback gain
+  lane_feedback_sign: 1.0               #차선 feedback 조향 부호
+  straight_angle_lane_scale: 0.90       #직진에서 trailer 각도 커져도 lane feedback을 유지
+  corner_lane_scale: 1.05               #코너 모드 lane feedback scale
+  recovery_lane_scale: 0.35             #recovery 모드 lane feedback scale
+  straight_min_trailer_scale: 0.05      #직진 deadband 부근 trailer feedback 최소 scale
+  corner_trailer_scale: 0.35            #코너 모드 trailer angle feedback scale
+  recovery_trailer_scale: 1.0           #recovery 모드 trailer angle feedback scale
+  straight_alpha_gain: 0.004            #직진 trailer angle error gain
+  corner_alpha_gain: 0.006              #코너 trailer angle error gain
+  recovery_alpha_gain: 0.018            #recovery trailer angle error gain
+  alpha_rate_gain: 0.0008               #trailer angle rate feedback gain
+  alpha_feedback_sign: 1.0              #trailer angle feedback 조향 부호
+  corner_alpha_ref_deg: 26.0            #코너에서 허용/목표 trailer 각도(deg)
+  corner_enter_confidence: 0.45         #코너 모드 진입 curvature confidence
+  corner_exit_confidence: 0.22          #코너 모드 탈출 curvature confidence
+  min_corner_frames: 8                  #코너 상태 최소 유지 프레임 수
+  corner_min_rows: 5                    #코너 판단에 필요한 최소 lane row 수
+  corner_detection_mode: shift          #shift=기존 far-near center shift 기반 코너 판단
+  corner_curve_start_norm: 0.08         #2차 곡률 confidence 시작값; 작을수록 코너를 쉽게 봄
+  corner_curve_full_norm: 0.28          #2차 곡률 confidence 1.0 값
+  corner_diagonal_slope_start_norm: 0.16  #직선 대각선으로 보기 시작하는 1차 slope 크기
+  corner_diagonal_curvature_ratio: 0.35   #곡률/slope 비율이 이보다 작으면 대각선 직선으로 감쇠
+  corner_diagonal_conf_scale: 0.25        #대각선 직선으로 판단될 때 corner confidence 배율
+  corner_single_solid_only_conf_scale: 0.60  #single solid recovery만 있을 때 corner confidence 배율
+  corner_shift_start_norm: 0.1          #legacy fallback용: 기존 far-near shift confidence 시작 비율
+  corner_shift_full_norm: 0.28          #legacy fallback용: 기존 far-near shift confidence 1.0 비율
+  curvature_proxy_gain: 2.2             #곡률 값을 steering feedforward용 proxy로 키우는 gain
+  curve_ff_gain: 0.55                   #코너 curvature feedforward gain
+  curve_feedback_sign: 1.0              #curvature feedforward 조향 부호
+  curvature_sign: 1.0                   #curvature 방향 부호 보정
+  straight_curve_scale: 0.12            #직진 모드 curvature feedforward scale
+  base_speed: 0.18                      #route controller 기본 전진 속도
+  min_speed: 0.20                       #route controller 최소 전진 속도
+  max_speed: 0.27                      #route controller 최대 전진 속도
+  corner_speed_scale: 0.52              #코너 모드 속도 배율
+  recovery_speed_scale: 0.35            #recovery 모드 속도 배율
+  angle_slow_speed_scale: 0.55          #trailer 각도 커질 때 속도 배율
+  slow_confidence_threshold: 0.4        #lane confidence 낮을 때 감속 시작 threshold
+  max_steer: 1.5                        #최종 조향 명령 절대값 제한
+  min_angle_confidence: 0.18            #route controller가 사용할 최소 angle confidence
+  angle_lost_grace_s: 0.75              #angle lost 시 마지막 각도 유지 시간(s)
+  alpha_rate_filter: 0.35               #trailer angle rate low-pass filter alpha
+  max_alpha_rate_deg_s: 160.0           #trailer angle rate 제한(deg/s)
+rover:             #스키드스티어 로버 출력 설정
+  drive_model: skid_steer                                #좌우 바퀴 차동구동 모델
+  serial: /dev/ttyUSB0                                   #모터 컨트롤러 serial 포트
+  baud: 115200                                           #serial baudrate
+  arm: false                                             #기본 모터 출력 활성화 여부; true면 바로 송신 가능
+  max_wheel_speed: 1                                     #좌/우 바퀴 명령 절대값 제한
+  speed_gain: 1.1                                        #전진 속도 명령 gain
+  steer_mix: 1.5                                         #조향 명령을 좌우 바퀴 차이로 섞는 gain
+  min_forward_speed: 0.12                                #전진 시 최소 바퀴 명령
+  turn_in_place_threshold: 0.96                          #이 조향 이상이면 제자리 회전 성향 적용
+  min_inner_wheel_ratio: 0.05                            #회전 시 안쪽 바퀴 최소 비율
+  min_abs_wheel_command: 0.08                            #모터 deadband 보상 최소 절대 명령
+  invert_left: false                                     #왼쪽 바퀴 명령 부호 반전
+  invert_right: false                                    #오른쪽 바퀴 명령 부호 반전
+  repeat_last_command: true                              #마지막 명령을 일정 주기로 반복 송신
+  command_rate_hz: 30.0                                  #반복 송신 주기(Hz)
+safety:            #주행 안전 제한 설정
+  min_drive_confidence: 0.08      #안전 레이어에서 요구하는 최소 lane confidence
+  lane_lost_grace_s: 0.4          #lane lost 후 마지막 유효 명령 유지 시간(s)
+  lane_lost_speed_scale: 0.55     #lane lost hold 중 속도 배율
+  lane_lost_min_speed: 0.18       #lane lost hold 중 최소 속도
+  max_steer_delta_per_frame: 1.0  #프레임당 조향 변화량 제한
+  stop_on_camera_failure: true    #카메라 프레임 실패 시 정지 여부
+runtime:           #실행/로그 설정
+  auto_start: false                        #실행 즉시 driving active로 시작할지 여부
+  display: false                           #OpenCV 로컬 창 표시 여부
+  display_scale: 1.0                       #로컬 표시 창 크기 배율
+  print_every: 1                           #콘솔 상태 출력 주기(프레임); 1이면 매 새 제어 명령 출력
+  max_frames: 0                            #최대 실행 프레임 수; 0이면 무제한
+  log_dir: logs/dotted_lane_following_run  #CSV/log 저장 루트
+  save_video: false                        #디버그 영상 저장 여부
+e2e_dataset:       #E2E 주행 학습용 데이터셋 저장; 세그/각도 모델은 별도라 BEV mask+angle+motor label만 저장
+  enabled: true                         #주행 중 E2E 학습 샘플 저장 여부
+  dir: e2e_dataset                      #각 run_dir 아래 저장될 데이터셋 폴더
+  metadata_csv: metadata.csv            #BEV 경로, trailer angle, 최종 모터 출력 label CSV
+  bev_mask_dir: bev_masks               #uint8 BEV segmentation mask 저장 폴더; 0=bg, 1=solid, 2=dashed
+  save_input_gray: true                 #E2E 이미지 입력용 고대비 BEV grayscale도 저장; 0=bg, 127=solid, 255=dashed
+  bev_input_dir: bev_input              #고대비 BEV grayscale 저장 폴더
+  save_color_preview: false             #true면 사람이 보는 컬러 BEV preview도 같이 저장
+  bev_color_dir: bev_color              #컬러 BEV preview 저장 폴더
+  sample_every: 1                       #N프레임마다 1개 저장
+  save_only_active: true                #실제 driving active일 때만 저장
+  save_only_sent: true                  #최종 wheel command가 송신되는 샘플만 저장
+  save_invalid: false                   #invalid/brake 샘플 저장 여부; 기본은 학습 label 오염 방지
+e2e_live_policy:   #학습된 temporal E2E 모델 실시간 추론/주행 설정; live_e2e_temporal_policy.py에서만 사용
+  checkpoint: e2e_temporal_policy/runs/temporal_gru_20260611_182905/best.pt  #사용할 E2E policy checkpoint
+  mode: shadow                         #shadow=기존 controller 주행+E2E 로그, assist=블렌딩, drive=E2E 직접 주행
+  device: auto                         #auto면 CUDA 가능 시 GPU
+  require_full_history: true           #history 10프레임이 쌓이기 전에는 E2E wheel 송신 금지
+  output_scale: 1.05                   #모델 raw wheel 출력 배율; 약하면 올리고 강하면 낮춤
+  max_abs_wheel: 0.87                  #E2E wheel 절대값 clamp; 학습 pivot 최대 명령과 맞춤
+  max_delta_per_frame: 0.30            #프레임당 wheel 변화량 제한; 너무 작으면 pivot 반응이 둔해짐
+  deadband: 0.02                       #이보다 작은 wheel 출력은 0으로 처리
+  min_mode_confidence: 0.0             #mode head confidence 기반 정지 threshold; 초기에는 사용 안 함
+  assist_blend: 0.50                   #assist 모드에서 E2E wheel 반영 비율
+stream:            #UDP 비디오 스트림 설정
+  enabled: false       #UDP 스트리밍 사용 여부
+  host: 192.168.0.70   #UDP 수신 PC IP
+  port: 5000           #UDP 수신 포트
+  width: 960           #UDP 스트림 가로 크기(px)
+  height: 360          #UDP 스트림 세로 크기(px)
+  fps: 15              #UDP 스트림 FPS
+  codec: h264          #UDP 인코딩 codec
+  bitrate_kbps: 1800   #UDP 인코딩 bitrate(kbps)
+  container: raw_h264  #UDP 컨테이너 형식
+  encoder: x264        #사용할 인코더
+  overlay: true        #디버그 overlay 포함 여부
+http_stream:       #브라우저 MJPEG 모니터링 설정
+  enabled: false      #HTTP 스트림 서버 사용 여부; 최대 속도 주행 시 false
+  mdns_enabled: true  #hostname.local mDNS 광고 사용 여부
+  host: 0.0.0.0       #HTTP 서버 bind 주소
+  port: 8081          #HTTP 서버 포트
+  view: fused_bev     #기본 웹 화면; fused_bev/yolo/camera/roi_edit 가능
+  width: 640          #fused BEV는 세로형이라 640x720으로 봐야 눌리지 않음
+  height: 720         #HTTP 화면 세로 크기(px)
+  keep_aspect: true   #브라우저 preview에서 원본 비율 유지
+  fps: 6              #HTTP MJPEG 송출 FPS
+  jpeg_quality: 65    #HTTP JPEG 품질(30~95)

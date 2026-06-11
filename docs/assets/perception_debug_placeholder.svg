@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="560" viewBox="0 0 1280 560" role="img" aria-labelledby="title desc">
+  <title id="title">Trailer Perception Debug Placeholder</title>
+  <desc id="desc">Placeholder for the trailer detection and BEV debug image.</desc>
+  <rect width="1280" height="560" fill="#f6f8fa"/>
+  <rect x="48" y="48" width="1184" height="464" rx="18" fill="#ffffff" stroke="#d8dee4" stroke-width="3"/>
+  <text x="640" y="246" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#1f2933">Trailer Perception Debug View</text>
+  <text x="640" y="302" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#596a7a">Add detection + BEV screenshot as docs/assets/perception_debug.png</text>
+  <text x="640" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#7a8a99">Lane mask, BEV fusion, panel detection, and angle state</text>
+</svg>
